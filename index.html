@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书籍烧脑指数分析仪</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6c91c0;
+            --accent: #e63946;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #2a9d8f;
+            --warning: #e9c46a;
+            --danger: #e76f51;
+            --border-radius: 10px;
+            --shadow: 0 5px 20px rgba(0,0,0,0.06);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 800px;
+            background-color: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            display: flex;
+            padding: 20px;
+            height: 650px;
+        }
+
+        .left-panel {
+            flex: 7;
+            padding: 0 15px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chart-header {
+            text-align: center;
+            padding: 0 16px 0 0px;
+            height: 45px;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 370px;
+            flex-shrink: 0;
+        }
+
+        .summary-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: #f8fafc;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            border-left: 4px solid var(--secondary);
+            min-height: 100px;
+        }
+
+        #summary-text {
+            font-size: 16px;
+            color: var(--dark);
+            line-height: 1.7;
+            text-align: left;
+            padding: 5px;
+        }
+
+        .right-panel {
+            flex: 5;
+            padding: 0 15px;
+            border-left: 1px solid rgba(0,0,0,0.08);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-title-container {
+            position: relative;
+            padding: 0 0 15px;
+            text-align: center;
+            margin-bottom: 10px;
+            height: 60px;
+        }
+
+        #book-title-input {
+            font-family: 'Noto Serif SC', serif;
+            border: none;
+            width: 100%;
+            padding: 8px 0;
+            background-color: transparent;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        #book-title-input:focus {
+            outline: none;
+        }
+
+        .book-title-container::after {
+            content: "";
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--secondary);
+            border-radius: 3px;
+        }
+
+        .dimension-controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding-right: 5px;
+        }
+
+        .dimension-control {
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .dimension-control:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .dimension-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .dimension-tag {
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .dimension-tag i {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .dimension-tag .dim-name {
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        .dimension-score {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(74, 111, 165, 0.1);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 10px;
+            outline: none;
+            margin: 8px 0;
+            transition: var(--transition);
+        }
+
+        input[type=range]:hover {
+            background: #dee2e6;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            background: var(--thumb-color);
+            transition: var(--transition);
+        }
+
+        .dimension-explanation {
+            font-size: 13px;
+            color: var(--gray);
+            line-height: 1.5;
+            margin-top: 8px;
+            padding: 6px 0;
+        }
+
+        #save-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(74, 111, 165, 0.4);
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #save-btn:hover {
+            background: #3a5a80;
+            box-shadow: 0 7px 20px rgba(74, 111, 165, 0.5);
+            transform: translateY(-3px);
+        }
+
+        #save-btn:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 12px;
+            color: var(--gray);
+            font-size: 13px;
+            background: #f8f9fa;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        @media (max-width: 850px) {
+            .container {
+                width: 95%;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                padding: 15px;
+                height: auto;
+            }
+            
+            .right-panel {
+                border-left: none;
+                border-top: 1px solid rgba(0,0,0,0.08);
+                padding-top: 15px;
+                margin-top: 15px;
+            }
+            
+            #chart-container {
+                height: 300px;
+            }
+            
+            #save-btn {
+                bottom: 15px;
+                right: 15px;
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="chart-header">
+                    <h2 id="difficulty-level">中度烧脑级</h2>
+                </div>
+                <div id="chart-container"></div>
+                <div class="summary-section">
+                    <div id="summary-text"></div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="book-title-container">
+                    <input type="text" id="book-title-input" value="人类简史">
+                </div>
+                
+                <div class="dimension-controls" id="dimension-controls"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>©寻典图书店  书籍烧脑指数分析仪 | 为深度阅读者设计的专业指南</p>
+        </div>
+    </div>
+
+    <button id="save-btn">
+        <i class="fas fa-camera"></i> 保存分析报告
+    </button>
+
+    <script type="text/javascript">
+        const bookData = {
+            title: '人类简史',
+            dimensions: [
+                { name: '知识门槛', score: 2, color: '#4a6fa5', icon: 'fas fa-graduation-cap'},
+                { name: '思辨深度', score: 4, color: '#2a9d8f', icon: 'fas fa-brain'},
+                { name: '概念密度', score: 3, color: '#e9c46a', icon: 'fas fa-cubes'},
+                { name: '术语壁垒', score: 2, color: '#e76f51', icon: 'fas fa-language'},
+                { name: '结构复杂度', score: 2, color: '#6c91c0', icon: 'fas fa-project-diagram'}
+            ]
+        };
+        
+        const fullExplanations = {
+            '知识门槛': {1: "零基础友好，适合所有人阅读。", 2: "有一些基础知识更好，但非必须。", 3: "需要了解该领域的基本概念和框架。", 4: "需要有相关领域的学习或工作经验。", 5: "需要具备该领域的系统知识，是专业读者读物。"},
+            '思辨深度': {1: "观点直白，易于理解。", 2: "提供了一些新颖观点，能引发初步思考。", 3: "逻辑链条清晰，但需要读者专注跟随。", 4: "提供了颠覆性视角，需要深度思考和反刍。", 5: "论证极其复杂，需要反复推敲和批判性思考。"},
+            '概念密度': {1: "以故事、案例为主，新概念很少。", 2: "引入了一些新概念，但都有详细解释。", 3: "跨学科，信息量大，但组织得很好。", 4: "概念密集，需要读者不断学习和记忆。", 5: "高密度、高强度的概念轰炸。"},
+            '术语壁垒': {1: "使用日常语言，通俗易懂。", 2: "有少量专业术语，不影响整体理解。", 3: "包含较多专业术语，需要时常查阅。", 4: "充斥着大量专业术语。", 5: "术语即壁垒，不查资料几乎无法阅读。"},
+            '结构复杂度': {1: "标准的线性结构。", 2: "基本是线性结构，但有少量插叙。", 3: "多线索并行或章节间关联紧密。", 4: "非线性叙事，时空跳跃较为频繁。", 5: "结构极其复杂，如迷宫般精巧但晦涩。"}
+        };
+
+        const chartDom = document.getElementById('chart-container');
+        const myChart = echarts.init(chartDom);
+        const titleInput = document.getElementById('book-title-input');
+        const summaryText = document.getElementById('summary-text');
+        const saveBtn = document.getElementById('save-btn');
+        const difficultyLevel = document.getElementById('difficulty-level');
+        
+        function getDifficultyInfo(totalScore) {
+            if (totalScore <= 9) return { level: "轻松休闲级", color: "#2a9d8f", desc: "适合放松阅读" };
+            if (totalScore <= 14) return { level: "中度烧脑级", color: "#e9c46a", desc: "需要适度专注" };
+            if (totalScore <= 19) return { level: "硬核挑战级", color: "#e76f51", desc: "需要深度思考" };
+            return { level: "终极烧脑级", color: "#d62828", desc: "专业级挑战" };
+        }
+
+        function generateSmartSummary(title, dimensions) {
+            const scores = dimensions.map(d => d.score);
+            const totalScore = scores.reduce((sum, score) => sum + score, 0);
+            const { level, color, desc } = getDifficultyInfo(totalScore);
+            
+            // 找出高分挑战维度
+            const challengeDims = dimensions.filter(d => d.score >= 4);
+            // 找出低分友好维度
+            const friendlyDims = dimensions.filter(d => d.score <= 2);
+            
+            let summaryParts = [`<span style="font-weight:700;color:${color}">《${title}》</span>被评为<span style="font-weight:700;color:${color}">${level}</span>读物`];
+            
+            // 处理挑战维度
+            if (challengeDims.length > 0 && challengeDims.length <= 3) {
+                const challengeNames = challengeDims.map(d => 
+                    `<span style="font-weight:900;color:${d.color}">${d.name}</span>`
+                ).join('、');
+                summaryParts.push(`最大挑战来自${challengeNames}这部分`);
+            } else if (challengeDims.length > 3) {
+                summaryParts.push("各维度均构成较高挑战");
+            }
+            
+            // 处理友好维度
+            if (friendlyDims.length > 0 && friendlyDims.length <= 3) {
+                const friendlyNames = friendlyDims.map(d => 
+                    `<span style="font-weight:600;color:${d.color}">${d.name}</span>`
+                ).join('、');
+                summaryParts.push(`其中${friendlyNames}部分相对友好`);
+            } else if (friendlyDims.length > 3) {
+                summaryParts.push("各维度均非常友好");
+            }
+            
+            // 特殊处理：当没有明显挑战或友好维度时
+            if (challengeDims.length === 0 && friendlyDims.length === 0) {
+                summaryParts.push("各维度难度均衡");
+            }
+            
+            summaryParts.push(desc);
+            
+            return summaryParts.join("，") + "。";
+        }
+
+        function createControls() {
+            titleInput.value = bookData.title;
+            const controlsContainer = document.getElementById('dimension-controls');
+            controlsContainer.innerHTML = '';
+            bookData.dimensions.forEach((dim, index) => {
+                const controlDiv = document.createElement('div');
+                controlDiv.className = 'dimension-control';
+                controlDiv.innerHTML = `
+                    <div class="dimension-header">
+                        <span class="dimension-tag" style="color: ${dim.color}">
+                            <i class="${dim.icon}" style="color: ${dim.color}"></i>
+                            <span class="dim-name">${dim.name}</span>
+                        </span>
+                        <div class="dimension-score" id="score-val-${index}">${dim.score}</div>
+                    </div>
+                    <input type="range" id="slider-${index}" min="1" max="5" value="${dim.score}" data-index="${index}" style="--thumb-color: ${dim.color}">
+                    <div class="dimension-explanation" id="explanation-${index}">${fullExplanations[dim.name][dim.score]}</div>
+                `;
+                controlsContainer.appendChild(controlDiv);
+                document.getElementById(`slider-${index}`).addEventListener('input', handleSliderChange);
+            });
+            titleInput.addEventListener('input', (e) => { 
+                bookData.title = e.target.value; 
+                updateUI(); 
+            });
+        }
+
+        function handleSliderChange(event) {
+            const index = event.target.dataset.index;
+            const newScore = parseInt(event.target.value, 10);
+            bookData.dimensions[index].score = newScore;
+            updateUI();
+        }
+        
+        function updateUI() {
+            const totalScore = bookData.dimensions.map(d => d.score).reduce((sum, s) => sum + s, 0);
+            const { level, color } = getDifficultyInfo(totalScore);
+            
+            difficultyLevel.textContent = level;
+            difficultyLevel.style.color = color;
+            
+            bookData.dimensions.forEach((dim, index) => {
+                document.getElementById(`score-val-${index}`).innerText = dim.score;
+                document.getElementById(`explanation-${index}`).innerText = fullExplanations[dim.name][dim.score];
+            });
+            const newSummary = generateSmartSummary(bookData.title, bookData.dimensions);
+            summaryText.innerHTML = newSummary;
+            updateChart();
+        }
+        
+        function updateChart() {
+            const totalScore = bookData.dimensions.map(d => d.score).reduce((sum, s) => sum + s, 0);
+            const { level, color } = getDifficultyInfo(totalScore);
+            
+            const option = {
+                tooltip: { 
+                    trigger: 'item',
+                    formatter: function(params) {
+                        const dim = bookData.dimensions[params.dataIndex];
+                        return `<strong>${dim.name}</strong><br/>评分: ${dim.score}<br/>${fullExplanations[dim.name][dim.score]}`;
+                    }
+                },
+                radar: {
+                    indicator: bookData.dimensions.map(d => ({ 
+                        name: d.name, 
+                        max: 5,
+                        color: d.color
+                    })),
+                    center: ['48%', '52%'],
+                    radius: '70%',
+                    axisName: {
+                        color: '#2c3e50',
+                        fontSize: 13,
+                        fontWeight: 'bold',
+                        padding: [3, 5]
+                    },
+                    splitArea: {
+                        show: true,
+                        areaStyle: {
+                            color: ['rgba(255,255,255,0.7)', 'rgba(230,240,250,0.7)']
+                        }
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{
+                        value: bookData.dimensions.map(d => d.score),
+                        name: bookData.title,
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        lineStyle: {
+                            width: 3,
+                            color: '#4a6fa5'
+                        },
+                        areaStyle: {
+                            color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [{
+                                offset: 0,
+                                color: 'rgba(74, 111, 165, 0.3)'
+                            }, {
+                                offset: 1,
+                                color: 'rgba(74, 111, 165, 0.1)'
+                            }])
+                        },
+                        label: {
+                            show: true,
+                            formatter: function(params) {
+                                return params.value;
+                            },
+                            position: 'top',
+                            fontWeight: 'bold',
+                            color: '#fff',
+                            backgroundColor: 'rgba(74, 111, 165, 0.8)',
+                            padding: [3, 6],
+                            borderRadius: 8
+                        }
+                    }]
+                }],
+                color: ['#4a6fa5']
+            };
+            
+            myChart.setOption(option);
+        }
+
+        // 截图功能逻辑
+        saveBtn.addEventListener('click', () => {
+            const captureElement = document.querySelector('.container');
+            
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
+            
+            html2canvas(captureElement, {
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                scale: window.devicePixelRatio * 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `《${bookData.title}》-烧脑指数分析报告.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                link.remove();
+            }).finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-camera"></i> 保存分析报告';
+            });
+        });
+
+        window.onload = () => {
+            createControls();
+            updateChart();
+            updateUI();
+        };
+        
+        window.onresize = () => { myChart.resize(); };
+    </script>
+</body>
+</html>
